@@ -20,7 +20,7 @@
     "start": "cds-serve",
     "watch": "cds watch",
     "mock-s4": "node test/mock-s4.js",
-    "test": "node --test test/"
+    "test": "node --test \"test/*.test.js\""
   },
   "cds": {
     "requires": {
