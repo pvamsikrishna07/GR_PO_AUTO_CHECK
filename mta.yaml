@@ -1,0 +1,47 @@
+_schema-version: 3.3.0
+ID: PVK_GR_PO
+version: 1.0.0
+description: "PVK_GR_PO - goods receipt from delivery note PDF against DED S/4HANA"
+parameters:
+  enable-parallel-deployments: true
+build-parameters:
+  before-all:
+    - builder: custom
+      commands:
+        - npm ci
+        - npx cds build --production
+modules:
+  # ONE module, ONE route: the Node.js CAP server serves both the UI (/) and the service (/gr).
+  - name: PVK_GR_PO-srv
+    type: nodejs
+    path: gen/srv
+    parameters:
+      instances: 1
+      memory: 512M
+      buildpack: nodejs_buildpack
+      routes:
+        - route: ${default-host}.${default-domain}
+    build-parameters:
+      builder: npm-ci
+    properties:
+      NODE_ENV: production
+      S4_DESTINATION: DED_HTTP_200
+      QTY_TOLERANCE_PCT: 5
+      # APP_USER / APP_PASSWORD are injected at deploy time by the GitHub workflow (mta extension descriptor)
+    requires:
+      - name: PVK_GR_PO-destination
+      - name: PVK_GR_PO-connectivity
+
+resources:
+  # reads the DED_HTTP_200 destination of the subaccount
+  - name: PVK_GR_PO-destination
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: destination
+      service-plan: lite
+  # needed when DED_HTTP_200 is an on-premise destination reached through the Cloud Connector
+  - name: PVK_GR_PO-connectivity
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: connectivity
+      service-plan: lite

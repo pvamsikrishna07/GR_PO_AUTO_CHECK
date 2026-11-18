@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PVK GR PO</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap">
+      <h1>PVK GR PO</h1>
+      <p class="sub">Goods receipt from a delivery note &middot; DED</p>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <ol class="steps" aria-label="Progress">
+      <li id="st1" class="active"><span>1</span>Upload</li>
+      <li id="st2"><span>2</span>Review matches</li>
+      <li id="st3"><span>3</span>Goods receipts</li>
+    </ol>
+
+    <section id="upload" class="card">
+      <h2>Upload a delivery note or shipping notice</h2>
+      <label id="drop" class="drop" tabindex="0">
+        <input id="file" type="file" accept="application/pdf,.pdf" hidden>
+        <strong>Choose a PDF</strong> or drop it here
+        <small>PDF only, up to 10 MB. The PO number, item, material, quantity and unit are read from the document.</small>
+      </label>
+      <p id="fileName" class="muted" hidden></p>
+    </section>
+
+    <div id="busy" class="busy" hidden><div class="spinner"></div><span id="busyText">Working&hellip;</span></div>
+    <div id="error" class="alert error" role="alert" hidden></div>
+
+    <section id="review" class="card" hidden>
+      <div class="head">
+        <h2>Purchase orders found in DED</h2>
+        <div id="summary" class="pills"></div>
+      </div>
+      <ul id="warnings" class="alert warn" hidden></ul>
+
+      <h3>Ready for goods receipt</h3>
+      <div class="scroll"><table id="matchedTable"></table></div>
+      <p id="noMatched" class="muted" hidden>No line matched a purchase order in DED.</p>
+
+      <details id="unmatchedBox" hidden>
+        <summary>Not matched (<span id="unmatchedCount">0</span>)</summary>
+        <div class="scroll"><table id="unmatchedTable"></table></div>
+      </details>
+
+      <div class="actions">
+        <button id="restart" class="btn ghost" type="button">Start over</button>
+        <button id="post" class="btn primary" type="button" disabled>Post goods receipt (101)&hellip;</button>
+      </div>
+    </section>
+
+    <section id="result" class="card" hidden>
+      <div class="head">
+        <h2>Goods receipt results</h2>
+        <div id="resultSummary" class="pills"></div>
+      </div>
+      <div class="scroll"><table id="resultTable"></table></div>
+      <div class="actions">
+        <button id="again" class="btn primary" type="button">Process another delivery note</button>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="confirm">
+    <form method="dialog">
+      <h2>Confirm goods receipt</h2>
+      <p id="confirmText"></p>
+      <div class="actions">
+        <button class="btn ghost" value="cancel">Cancel</button>
+        <button class="btn primary" value="ok" id="confirmOk">Yes, post goods receipt</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="app.js" type="module"></script>
+</body>
+</html>

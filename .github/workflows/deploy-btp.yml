@@ -1,0 +1,82 @@
+name: Deploy PVK_GR_PO to SAP BTP
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-btp
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CF_API: ${{ secrets.CF_API }}
+      CF_ORG: ${{ secrets.CF_ORG }}
+      CF_SPACE: ${{ secrets.CF_SPACE }}
+      CF_USERNAME: ${{ secrets.CF_USERNAME }}
+      CF_PASSWORD: ${{ secrets.CF_PASSWORD }}
+      APP_USER: ${{ secrets.APP_USER }}
+      APP_PASSWORD: ${{ secrets.APP_PASSWORD }}
+    steps:
+      - name: Check required repository secrets
+        run: |
+          missing=""
+          for v in CF_API CF_ORG CF_SPACE CF_USERNAME CF_PASSWORD APP_USER APP_PASSWORD; do
+            [ -n "${!v}" ] || missing="$missing $v"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Missing repository secrets:$missing (Settings > Secrets and variables > Actions)"
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies and run tests
+        run: |
+          npm ci
+          npm test
+
+      - name: Install MTA build tool and Cloud Foundry CLI
+        run: |
+          npm install -g mbt
+          wget -q -O - https://packages.cloudfoundry.org/debian/cli.cloudfoundry.org.key | sudo gpg --dearmor -o /usr/share/keyrings/cli.cloudfoundry.org.gpg
+          echo "deb [signed-by=/usr/share/keyrings/cli.cloudfoundry.org.gpg] https://packages.cloudfoundry.org/debian stable main" | sudo tee /etc/apt/sources.list.d/cloudfoundry-cli.list
+          sudo apt-get update -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/cloudfoundry-cli.list -o Dir::Etc::sourceparts=- -o APT::Get::List-Cleanup=0
+          sudo apt-get install -y cf8-cli
+          cf8 --version
+          cf8 install-plugin multiapps -r CF-Community -f
+
+      - name: Build MTA archive
+        run: mbt build -t ./mta_archives --mtar PVK_GR_PO.mtar
+
+      - name: Write MTA extension descriptor (app credentials)
+        run: |
+          node -e '
+            const ext = { "_schema-version": "3.3.0", ID: "PVK_GR_PO-ext", extends: "PVK_GR_PO",
+              modules: [{ name: "PVK_GR_PO-srv", properties: { APP_USER: process.env.APP_USER, APP_PASSWORD: process.env.APP_PASSWORD } }] };
+            require("fs").writeFileSync("deploy.mtaext", JSON.stringify(ext), { mode: 0o600 });
+          '
+
+      - name: Deploy to BTP Cloud Foundry
+        run: |
+          cf8 api "$CF_API"
+          cf8 auth "$CF_USERNAME" "$CF_PASSWORD"
+          cf8 target -o "$CF_ORG" -s "$CF_SPACE"
+          cf8 deploy mta_archives/PVK_GR_PO.mtar -e deploy.mtaext -f
+          cf8 app PVK_GR_PO-srv
+
+      - name: Remove credentials file
+        if: always()
+        run: rm -f deploy.mtaext

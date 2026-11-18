@@ -1,0 +1,36 @@
+{
+  "name": "pvk_gr_po",
+  "version": "1.0.0",
+  "description": "PVK_GR_PO - extract PO data from a delivery note PDF, match it against DED S/4HANA purchase orders and post goods receipts (movement type 101).",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "dependencies": {
+    "@sap-cloud-sdk/http-client": "^4.10.0",
+    "@sap/cds": "^10",
+    "express": "^5.3.0",
+    "pdf-parse": "^2.4.5"
+  },
+  "devDependencies": {
+    "@sap/cds-dk": "^10",
+    "pdfkit": "^0.20.2"
+  },
+  "scripts": {
+    "start": "cds-serve",
+    "watch": "cds watch",
+    "mock-s4": "node test/mock-s4.js",
+    "test": "node --test test/"
+  },
+  "cds": {
+    "requires": {
+      "auth": "dummy"
+    },
+    "server": {
+      "body_parser": {
+        "limit": "15mb"
+      }
+    }
+  },
+  "private": true
+}
