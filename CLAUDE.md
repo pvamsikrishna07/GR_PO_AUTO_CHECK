@@ -59,7 +59,7 @@ because of the single-route requirement, so HTTP Basic auth protects UI and serv
 
 ## GitHub repository secrets used by the workflow
 `CF_API`, `CF_ORG`, `CF_SPACE`, `CF_USERNAME`, `CF_PASSWORD` (BTP Cloud Foundry login) and `APP_USER`, `APP_PASSWORD`
-(app access). The workflow's first step fails with the list of missing names - if your existing secrets are named
+(app access). The CF_* names were confirmed against the repo's existing secrets; APP_USER/APP_PASSWORD were added by the user on 2026-11-18. The workflow's first step fails with the list of missing names - if your existing secrets are named
 differently, change the `env:` block at the top of `deploy-btp.yml`.
 
 ## Commands
